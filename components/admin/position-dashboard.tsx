@@ -66,7 +66,7 @@ export function PositionDashboard({ admin, onLogout }: PositionDashboardProps) {
     description: "",
     level: "",
     duration: 45,
-    questions: [{ question: "", followUp: "" }],
+    questions: [{ id: "0", question: "", followUp: "" }],
   })
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export function PositionDashboard({ admin, onLogout }: PositionDashboardProps) {
         description: "",
         level: "",
         duration: 45,
-        questions: [{ question: "", followUp: "" }],
+        questions: [{ id: "0", question: "", followUp: "" }],
       })
       setIsCreateDialogOpen(false)
     } catch (error) {
@@ -195,7 +195,7 @@ export function PositionDashboard({ admin, onLogout }: PositionDashboardProps) {
     } else {
       setNewPositionData((prev) => ({
         ...prev,
-        questions: [...prev.questions, { question: "", followUp: "" }],
+        questions: [...prev.questions, { id: String(prev.questions.length), question: "", followUp: "" }],
       }))
     }
   }

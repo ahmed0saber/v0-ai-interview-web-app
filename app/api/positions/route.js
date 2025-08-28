@@ -7,7 +7,7 @@ const createPositionSchema = z.object({
   title: z.string().min(3).max(100),
   description: z.string().min(10).max(500),
   level: z.string().min(3).max(50),
-  duration: z.string().min(3).max(20),
+  duration: z.number().min(15).max(60),
   questions: z
     .array(
       z.object({
