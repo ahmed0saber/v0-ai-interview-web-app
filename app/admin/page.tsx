@@ -5,7 +5,7 @@ import { AdminLogin } from "@/components/admin/admin-login"
 import { CouponDashboard } from "@/components/admin/coupon-dashboard"
 
 interface Admin {
-  username: string
+  email: string
   role: string
 }
 

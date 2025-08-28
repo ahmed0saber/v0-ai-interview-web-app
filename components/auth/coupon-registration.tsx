@@ -18,6 +18,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    password: "",
     couponCode: "",
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -49,7 +50,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
 
     try {
       // Validate coupon
-      const { valid, coupon } = await validateCoupon(formData.couponCode)
+      const { valid } = await validateCoupon(formData.couponCode)
 
       if (!valid) {
         setError("Invalid or expired coupon code. Please check your code and try again.")
@@ -64,6 +65,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          password: formData.password,
           couponCode: formData.couponCode,
         }),
       })
@@ -136,6 +138,21 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
                 placeholder="Enter your email address"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
+                required
+                className="bg-input border-border focus:ring-ring"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) => handleInputChange("password", e.target.value)}
                 required
                 className="bg-input border-border focus:ring-ring"
               />

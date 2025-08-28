@@ -11,12 +11,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ShieldIcon, AlertCircle } from "lucide-react"
 
 interface AdminLoginProps {
-  onLoginSuccess: (admin: { username: string; role: string }) => void
+  onLoginSuccess: (admin: { email: string; role: string }) => void
 }
 
 export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [credentials, setCredentials] = useState({
-    username: "",
+    email: "",
     password: "",
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -34,7 +34,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: credentials.username,
+          email: credentials.email,
           password: credentials.password,
         }),
       })
@@ -45,11 +45,11 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         // Store admin token for subsequent requests
         localStorage.setItem("adminToken", data.token)
         onLoginSuccess({
-          username: data.admin.username,
+          email: data.admin.email,
           role: data.admin.role,
         })
       } else {
-        setError(data.error || "Invalid username or password")
+        setError(data.error || "Invalid email or password")
       }
     } catch (err) {
       setError("Login failed. Please try again.")
@@ -80,15 +80,15 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username" className="text-sm font-medium text-foreground">
-                Username
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                Email
               </Label>
               <Input
-                id="username"
+                id="email"
                 type="text"
-                placeholder="Enter admin username"
-                value={credentials.username}
-                onChange={(e) => handleInputChange("username", e.target.value)}
+                placeholder="Enter admin email"
+                value={credentials.email}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 required
                 className="bg-input border-border focus:ring-ring"
               />
@@ -119,7 +119,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              disabled={isLoading || !credentials.username || !credentials.password}
+              disabled={isLoading || !credentials.email || !credentials.password}
             >
               {isLoading ? (
                 <>
@@ -133,7 +133,7 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-muted-foreground">Demo credentials: admin / admin123</p>
+            <p className="text-xs text-muted-foreground">Demo credentials: admin@interview.com / admin123</p>
           </div>
         </CardContent>
       </Card>

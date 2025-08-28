@@ -32,7 +32,7 @@ import {
 } from "lucide-react"
 
 interface Admin {
-  username: string
+  email: string
   role: string
 }
 
@@ -201,7 +201,7 @@ export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {admin.username}</p>
+            <p className="text-muted-foreground">Welcome back, {admin.email}</p>
           </div>
           <Button onClick={onLogout} variant="outline">
             <LogOutIcon className="mr-2 h-4 w-4" />
