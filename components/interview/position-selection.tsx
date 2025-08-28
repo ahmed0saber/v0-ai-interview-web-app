@@ -33,7 +33,17 @@ export function PositionSelection({ user, onPositionSelect }: PositionSelectionP
   useEffect(() => {
     const loadPositions = async () => {
       try {
-        const response = await fetch("/api/positions")
+        const token = localStorage.getItem("userToken")
+        const response = await fetch("/api/positions", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to load positions")
+        }
+
         const data = await response.json()
         setPositions(data.positions)
       } catch (error) {

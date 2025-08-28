@@ -70,7 +70,17 @@ export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
   useEffect(() => {
     const loadCoupons = async () => {
       try {
-        const response = await fetch("/api/coupons")
+        const token = localStorage.getItem("adminToken")
+        const response = await fetch("/api/coupons", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!response.ok) {
+          throw new Error("Failed to load coupons")
+        }
+
         const data = await response.json()
         setCoupons(data.coupons)
 
@@ -104,26 +114,57 @@ export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
   const handleCreateCoupon = async () => {
     if (!newCouponData.code || !newCouponData.expiresAt) return
 
-    const newCoupon: Coupon = {
-      id: `COUP${String(coupons.length + 1).padStart(3, "0")}`,
-      code: newCouponData.code,
-      isUsed: false,
-      createdBy: admin.username,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(newCouponData.expiresAt).toISOString(),
+    try {
+      const token = localStorage.getItem("adminToken")
+      const response = await fetch("/api/coupons", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code: newCouponData.code,
+          expiresAt: new Date(newCouponData.expiresAt).toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create coupon")
+      }
+
+      const data = await response.json()
+
+      // Update local state with new coupon
+      setCoupons((prev) => [...prev, data.coupon])
+      setStats((prev) => ({ ...prev, total: prev.total + 1, active: prev.active + 1 }))
+
+      setNewCouponData({ code: "", expiresAt: "" })
+      setIsCreateDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to create coupon:", error)
+      // Handle error appropriately
     }
-
-    // Mock API call - in real app, this would save to backend
-    setCoupons((prev) => [...prev, newCoupon])
-    setStats((prev) => ({ ...prev, total: prev.total + 1, active: prev.active + 1 }))
-
-    setNewCouponData({ code: "", expiresAt: "" })
-    setIsCreateDialogOpen(false)
   }
 
-  const handleDeleteCoupon = (couponId: string) => {
-    setCoupons((prev) => prev.filter((c) => c.id !== couponId))
-    setStats((prev) => ({ ...prev, total: prev.total - 1, active: prev.active - 1 }))
+  const handleDeleteCoupon = async (couponId: string) => {
+    try {
+      const token = localStorage.getItem("adminToken")
+      const response = await fetch(`/api/coupons/${couponId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to delete coupon")
+      }
+
+      setCoupons((prev) => prev.filter((c) => c.id !== couponId))
+      setStats((prev) => ({ ...prev, total: prev.total - 1, active: prev.active - 1 }))
+    } catch (error) {
+      console.error("Failed to delete coupon:", error)
+    }
   }
 
   const copyToClipboard = (text: string) => {

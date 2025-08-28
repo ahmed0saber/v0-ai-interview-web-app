@@ -143,12 +143,11 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
 
   const startInterview = async () => {
     try {
-      // Create interview session via API
       const response = await fetch("/api/interviews", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
         body: JSON.stringify({
           positionId: position.id,
@@ -215,7 +214,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
         body: JSON.stringify({
           answer,
@@ -249,7 +248,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
         },
       })
 
@@ -315,7 +314,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
           },
         })
 

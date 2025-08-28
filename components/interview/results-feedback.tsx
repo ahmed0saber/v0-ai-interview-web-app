@@ -25,6 +25,21 @@ interface InterviewResults {
   duration: number
   questionsAnswered: number
   completedAt: string
+  overallScore?: number
+  scores?: {
+    technical_knowledge: number
+    problem_solving: number
+    communication: number
+    best_practices: number
+  }
+  strengths?: string[]
+  improvements?: string[]
+  recommendations?: string[]
+  questionBreakdown?: Array<{
+    question: string
+    score: number
+    feedback: string
+  }>
 }
 
 interface User {
@@ -60,9 +75,27 @@ export function ResultsFeedback({
   const [feedbackData, setFeedbackData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Generate mock performance data based on interview
   useEffect(() => {
-    const generateFeedback = async () => {
+    const processFeedback = async () => {
+      if (results.overallScore && results.scores) {
+        // Use API-generated feedback
+        setFeedbackData({
+          overallScore: results.overallScore,
+          performanceLevel: getPerformanceLevel(results.overallScore),
+          scores: results.scores,
+          questionBreakdown: results.questionBreakdown || [],
+          strengths: results.strengths || [],
+          improvements: results.improvements || [],
+          recommendations: results.recommendations || [],
+        })
+        setIsLoading(false)
+      } else {
+        // Fallback to mock data generation if API didn't provide complete feedback
+        await generateMockFeedback()
+      }
+    }
+
+    const generateMockFeedback = async () => {
       // Simulate API call for feedback analysis
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
@@ -82,14 +115,7 @@ export function ResultsFeedback({
           4,
       )
 
-      const performanceLevel =
-        overallScore >= 85
-          ? "excellent"
-          : overallScore >= 75
-            ? "good"
-            : overallScore >= 60
-              ? "average"
-              : "needs_improvement"
+      const performanceLevel = getPerformanceLevel(overallScore)
 
       const questionBreakdown = position.questions.map((q, index) => ({
         question: `Q${index + 1}`,
@@ -114,8 +140,15 @@ export function ResultsFeedback({
       setIsLoading(false)
     }
 
-    generateFeedback()
-  }, [position.questions])
+    processFeedback()
+  }, [position.questions, results])
+
+  const getPerformanceLevel = (score: number) => {
+    if (score >= 85) return "excellent"
+    if (score >= 75) return "good"
+    if (score >= 60) return "average"
+    return "needs_improvement"
+  }
 
   if (isLoading) {
     return (
@@ -136,11 +169,6 @@ export function ResultsFeedback({
     { name: "Problem Solving", score: feedbackData.scores.problem_solving, fullMark: 100 },
     { name: "Communication", score: feedbackData.scores.communication, fullMark: 100 },
     { name: "Best Practices", score: feedbackData.scores.best_practices, fullMark: 100 },
-  ]
-
-  const pieData = [
-    { name: "Strengths", value: feedbackData.strengths.length, color: "#22c55e" },
-    { name: "Improvements", value: feedbackData.improvements.length, color: "#f59e0b" },
   ]
 
   const getScoreColor = (score: number) => {

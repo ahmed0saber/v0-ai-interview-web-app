@@ -25,13 +25,20 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
   const [success, setSuccess] = useState("")
 
   const validateCoupon = async (code: string) => {
-    // Mock API call - replace with actual API
-    const response = await fetch("/api/coupons")
-    const data = await response.json()
+    try {
+      const response = await fetch("/api/coupons/validate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      })
 
-    const coupon = data.coupons.find((c: any) => c.code === code && !c.isUsed && new Date(c.expiresAt) > new Date())
-
-    return coupon ? { valid: true, coupon } : { valid: false, coupon: null }
+      const data = await response.json()
+      return { valid: response.ok, coupon: data.coupon }
+    } catch (error) {
+      return { valid: false, coupon: null }
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,8 +56,27 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
         return
       }
 
-      // Mock registration - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          couponCode: formData.couponCode,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Registration failed. Please try again.")
+        return
+      }
+
+      // Store user token for subsequent requests
+      localStorage.setItem("userToken", data.token)
 
       setSuccess("Registration successful! Welcome to AI Interview Platform.")
 

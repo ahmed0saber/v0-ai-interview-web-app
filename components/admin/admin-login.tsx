@@ -28,17 +28,28 @@ export function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setError("")
 
     try {
-      // Mock admin authentication - replace with actual API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Simple mock validation (in real app, this would be secure authentication)
-      if (credentials.username === "admin" && credentials.password === "admin123") {
-        onLoginSuccess({
+      const response = await fetch("/api/auth/admin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           username: credentials.username,
-          role: "administrator",
+          password: credentials.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Store admin token for subsequent requests
+        localStorage.setItem("adminToken", data.token)
+        onLoginSuccess({
+          username: data.admin.username,
+          role: data.admin.role,
         })
       } else {
-        setError("Invalid username or password")
+        setError(data.error || "Invalid username or password")
       }
     } catch (err) {
       setError("Login failed. Please try again.")
