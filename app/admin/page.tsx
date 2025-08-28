@@ -50,11 +50,11 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="coupons">
-            <CouponDashboard admin={admin} onLogout={handleLogout} />
+            <CouponDashboard />
           </TabsContent>
 
           <TabsContent value="positions">
-            <PositionDashboard admin={admin} onLogout={handleLogout} />
+            <PositionDashboard />
           </TabsContent>
         </Tabs>
       </div>

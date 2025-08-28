@@ -2,30 +2,28 @@
 
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
-import { useNavigate } from "react-router-dom"
 import { LogOut, User, ShieldIcon } from "lucide-react"
 
 export function Navbar() {
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
-    navigate("/")
+    window.location.href = "/"
   }
 
   const handleProfile = () => {
-    navigate("/profile")
+    window.location.href = "/profile"
   }
 
   const handleAdmin = () => {
-    navigate("/admin")
+    window.location.href = "/admin"
   }
 
   if (!user) {
     return (
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between mx-auto py-1 px-2">
           <div className="flex items-center space-x-2">
             <h1 className="text-xl font-bold">AI Interview Platform</h1>
           </div>
@@ -40,7 +38,7 @@ export function Navbar() {
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between">
+      <div className="container flex h-14 items-center justify-between mx-auto py-1 px-2">
         <div className="flex items-center space-x-2">
           <h1 className="text-xl font-bold">AI Interview Platform</h1>
         </div>

@@ -20,18 +20,12 @@ import {
   PlusIcon,
   EditIcon,
   TrashIcon,
-  LogOutIcon,
   BriefcaseIcon,
   ClockIcon,
   CheckCircleIcon,
   XIcon,
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-interface Admin {
-  email: string
-  role: string
-}
 
 interface Position {
   _id: string
@@ -49,12 +43,7 @@ interface Position {
   updatedAt: string
 }
 
-interface PositionDashboardProps {
-  admin: Admin
-  onLogout: () => void
-}
-
-export function PositionDashboard({ admin, onLogout }: PositionDashboardProps) {
+export function PositionDashboard() {
   const [positions, setPositions] = useState<Position[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -265,18 +254,6 @@ export function PositionDashboard({ admin, onLogout }: PositionDashboardProps) {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Position Management</h1>
-            <p className="text-muted-foreground">Manage interview positions and questions</p>
-          </div>
-          <Button onClick={onLogout} variant="outline">
-            <LogOutIcon className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>

@@ -21,7 +21,6 @@ import {
   PlusIcon,
   EditIcon,
   TrashIcon,
-  LogOutIcon,
   TicketIcon,
   UsersIcon,
   TrendingUpIcon,
@@ -30,11 +29,6 @@ import {
   XCircleIcon,
   CopyIcon,
 } from "lucide-react"
-
-interface Admin {
-  email: string
-  role: string
-}
 
 interface Coupon {
   id: string
@@ -47,12 +41,7 @@ interface Coupon {
   expiresAt: string
 }
 
-interface CouponDashboardProps {
-  admin: Admin
-  onLogout: () => void
-}
-
-export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
+export function CouponDashboard() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -197,18 +186,6 @@ export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {admin.email}</p>
-          </div>
-          <Button onClick={onLogout} variant="outline">
-            <LogOutIcon className="mr-2 h-4 w-4" />
-            Logout
-          </Button>
-        </div>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>

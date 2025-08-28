@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
@@ -19,6 +18,7 @@ import {
   TrendingUpIcon,
   ClockIcon,
 } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 
 interface InterviewResults {
   position: string
@@ -116,7 +116,7 @@ export function ResultsFeedback({
           mockScores.problem_solving +
           mockScores.communication +
           mockScores.best_practices) /
-          4,
+        4,
       )
 
       const performanceLevel = getPerformanceLevel(overallScore)
@@ -350,16 +350,16 @@ export function ResultsFeedback({
                   <CardHeader>
                     <CardTitle className="capitalize flex items-center justify-between">
                       {skill.replace("_", " ")}
-                      <Badge variant={getScoreBadgeVariant(score as number)}>{score}/100</Badge>
+                      <Badge variant={getScoreBadgeVariant(score as number)}>{(score as number)}/100</Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Progress value={score as number} className="mb-4" />
                     <p className="text-sm text-muted-foreground">
-                      {score >= 85 && "Excellent mastery of this skill area."}
-                      {score >= 75 && score < 85 && "Good understanding with minor gaps."}
-                      {score >= 60 && score < 75 && "Adequate knowledge, focus on improvement."}
-                      {score < 60 && "Significant development needed in this area."}
+                      {(score as number) >= 85 && "Excellent mastery of this skill area."}
+                      {(score as number) >= 75 && (score as number) < 85 && "Good understanding with minor gaps."}
+                      {(score as number) >= 60 && (score as number) < 75 && "Adequate knowledge, focus on improvement."}
+                      {(score as number) < 60 && "Significant development needed in this area."}
                     </p>
                   </CardContent>
                 </Card>
