@@ -70,7 +70,7 @@ export function CouponDashboard({ admin, onLogout }: CouponDashboardProps) {
   useEffect(() => {
     const loadCoupons = async () => {
       try {
-        const response = await fetch("/data/coupons.json")
+        const response = await fetch("/api/coupons")
         const data = await response.json()
         setCoupons(data.coupons)
 

@@ -26,7 +26,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
 
   const validateCoupon = async (code: string) => {
     // Mock API call - replace with actual API
-    const response = await fetch("/data/coupons.json")
+    const response = await fetch("/api/coupons")
     const data = await response.json()
 
     const coupon = data.coupons.find((c: any) => c.code === code && !c.isUsed && new Date(c.expiresAt) > new Date())

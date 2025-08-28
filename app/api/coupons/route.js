@@ -1,0 +1,45 @@
+const coupons = {
+    "coupons": [
+        {
+            "id": "COUP001",
+            "code": "INTERVIEW2025",
+            "isUsed": false,
+            "createdBy": "admin",
+            "createdAt": "2025-01-15T10:00:00Z",
+            "expiresAt": "2025-12-31T23:59:59Z"
+        },
+        {
+            "id": "COUP002",
+            "code": "BETA_ACCESS",
+            "isUsed": true,
+            "usedBy": "john.doe@example.com",
+            "usedAt": "2024-01-20T14:30:00Z",
+            "createdBy": "admin",
+            "createdAt": "2024-01-10T09:00:00Z",
+            "expiresAt": "2024-12-31T23:59:59Z"
+        },
+        {
+            "id": "COUP003",
+            "code": "EARLY_BIRD",
+            "isUsed": false,
+            "createdBy": "admin",
+            "createdAt": "2024-01-12T11:15:00Z",
+            "expiresAt": "2024-06-30T23:59:59Z"
+        },
+        {
+            "id": "COUP004",
+            "code": "PREMIUM_TEST",
+            "isUsed": false,
+            "createdBy": "admin",
+            "createdAt": "2024-01-18T16:45:00Z",
+            "expiresAt": "2024-12-31T23:59:59Z"
+        }
+    ]
+}
+
+export async function GET() {
+    return new Response(JSON.stringify(coupons), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 200,
+    });
+}

@@ -33,7 +33,7 @@ export function PositionSelection({ user, onPositionSelect }: PositionSelectionP
   useEffect(() => {
     const loadPositions = async () => {
       try {
-        const response = await fetch("/data/positions.json")
+        const response = await fetch("/api/positions")
         const data = await response.json()
         setPositions(data.positions)
       } catch (error) {
