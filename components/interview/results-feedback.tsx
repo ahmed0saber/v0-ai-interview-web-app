@@ -40,6 +40,7 @@ interface InterviewResults {
     score: number
     feedback: string
   }>
+  summary?: string
 }
 
 interface User {
@@ -77,20 +78,23 @@ export function ResultsFeedback({
 
   useEffect(() => {
     const processFeedback = async () => {
-      if (results.overallScore && results.scores) {
-        // Use API-generated feedback
+      console.log("[v0] Processing feedback with results:", results)
+
+      if (results.overallScore && results.scores && results.strengths) {
+        console.log("[v0] Using API-generated feedback")
         setFeedbackData({
           overallScore: results.overallScore,
           performanceLevel: getPerformanceLevel(results.overallScore),
           scores: results.scores,
           questionBreakdown: results.questionBreakdown || [],
-          strengths: results.strengths || [],
+          strengths: results.strengths,
           improvements: results.improvements || [],
           recommendations: results.recommendations || [],
+          summary: results.summary || "Interview completed successfully.",
         })
         setIsLoading(false)
       } else {
-        // Fallback to mock data generation if API didn't provide complete feedback
+        console.log("[v0] Falling back to mock data generation")
         await generateMockFeedback()
       }
     }
@@ -136,6 +140,7 @@ export function ResultsFeedback({
           "Study system design principles",
           "Build more complex projects",
         ],
+        summary: "Overall good performance with room for technical improvement.",
       })
       setIsLoading(false)
     }
@@ -149,6 +154,36 @@ export function ResultsFeedback({
     if (score >= 60) return "average"
     return "needs_improvement"
   }
+
+  const saveResultsToProfile = async () => {
+    try {
+      const token = localStorage.getItem("auth_token")
+      await fetch("/api/users/profile/results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          position: results.position,
+          score: feedbackData.overallScore,
+          duration: results.duration,
+          questionsAnswered: results.questionsAnswered,
+          completedAt: results.completedAt,
+          strengths: feedbackData.strengths,
+          improvements: feedbackData.improvements,
+        }),
+      })
+    } catch (error) {
+      console.error("[v0] Error saving results to profile:", error)
+    }
+  }
+
+  useEffect(() => {
+    if (feedbackData && !isLoading) {
+      saveResultsToProfile()
+    }
+  }, [feedbackData, isLoading])
 
   if (isLoading) {
     return (
@@ -202,9 +237,7 @@ export function ResultsFeedback({
           <div className="flex justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <ClockIcon className="h-4 w-4" />
-              <span>
-                {Math.floor(results.duration / 60)}m {results.duration % 60}s
-              </span>
+              <span>{results.duration}m</span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircleIcon className="h-4 w-4" />
@@ -232,14 +265,7 @@ export function ResultsFeedback({
                 {feedbackData.performanceLevel === "needs_improvement" && "Room for Improvement"}
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                {feedbackData.performanceLevel === "excellent" &&
-                  "Outstanding work! You demonstrated strong technical knowledge and excellent communication skills."}
-                {feedbackData.performanceLevel === "good" &&
-                  "Well done! You showed solid understanding with some areas for minor improvement."}
-                {feedbackData.performanceLevel === "average" &&
-                  "Good effort! Focus on the improvement areas below to enhance your interview performance."}
-                {feedbackData.performanceLevel === "needs_improvement" &&
-                  "Keep practicing! Review the feedback below and focus on building your technical skills."}
+                {feedbackData.summary || "Interview completed successfully with detailed AI analysis."}
               </p>
             </div>
           </CardContent>

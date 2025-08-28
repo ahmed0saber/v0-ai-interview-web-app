@@ -147,7 +147,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
         body: JSON.stringify({
           positionId: position.id,
@@ -168,8 +168,10 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
     setCurrentMessage(introMessage)
     await simulateAISpeaking(introMessage)
 
-    // Start listening for user response
-    startListening()
+    // Start listening for user response after AI finishes speaking
+    setTimeout(() => {
+      startListening()
+    }, 1000)
   }
 
   const startListening = () => {
@@ -209,12 +211,16 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
   const processUserAnswer = async (answer: string) => {
     if (!interviewId) return
 
+    speechManager.stopListening()
+    setIsRecording(false)
+    setIsUserSpeaking(false)
+
     try {
       const response = await fetch(`/api/interviews/${interviewId}/answer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
         body: JSON.stringify({
           answer,
@@ -225,18 +231,20 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
       if (response.ok) {
         const data = await response.json()
 
-        // AI responds with evaluation and follow-up
         setTimeout(async () => {
           await simulateAISpeaking(data.aiResponse)
 
-          // Continue to next phase after AI response
+          // Continue to next phase after AI response with proper delay
           setTimeout(() => {
             handlePhaseTransition()
-          }, 1000)
+          }, 2000)
         }, 1000)
       }
     } catch (error) {
       console.error("Failed to process answer:", error)
+      setTimeout(() => {
+        startListening()
+      }, 1000)
     }
   }
 
@@ -248,7 +256,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
       })
 
@@ -271,8 +279,10 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         if (question) {
           const questionMessage = `${messages.question}\n\n${question.question}`
           setCurrentMessage(questionMessage)
-          await simulateAISpeaking(question.question)
-          startListening()
+          await simulateAISpeaking(`Here's your next technical question: ${question.question}`)
+          setTimeout(() => {
+            startListening()
+          }, 1500)
         }
         break
       case "question":
@@ -291,8 +301,10 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
             if (nextQuestion) {
               const questionMessage = `${messages.question}\n\n${nextQuestion.question}`
               setCurrentMessage(questionMessage)
-              await simulateAISpeaking(nextQuestion.question)
-              startListening()
+              await simulateAISpeaking(`Let's move to the next question: ${nextQuestion.question}`)
+              setTimeout(() => {
+                startListening()
+              }, 1500)
             }
           }, 2000)
         } else {
@@ -314,7 +326,7 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
           },
         })
 
@@ -333,7 +345,6 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
   const simulateAISpeaking = async (message: string) => {
     setIsSpeaking(true)
 
-    // Add AI message to captions
     const aiCaption = {
       id: `ai-${Date.now()}`,
       speaker: "ai" as const,
@@ -343,11 +354,10 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
     setCaptions((prev) => [...prev, aiCaption])
 
     try {
-      // Use speech synthesis to make AI speak
       await speechManager.speak(message, {
-        rate: 0.9,
-        pitch: 1.0,
-        volume: 0.8,
+        rate: 0.85, // Slightly slower for better comprehension
+        pitch: 1.1, // Slightly higher pitch for AI voice
+        volume: 0.9, // Higher volume for clarity
       })
     } catch (error) {
       console.error("Speech synthesis error:", error)

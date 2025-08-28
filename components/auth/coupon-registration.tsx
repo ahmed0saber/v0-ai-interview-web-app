@@ -10,8 +10,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react"
 
+interface User {
+  id: string
+  email: string
+  name: string
+  couponCode: string
+}
+
 interface CouponRegistrationProps {
-  onRegistrationSuccess: (userData: { email: string; name: string }) => void
+  onRegistrationSuccess: (userData: User) => void
 }
 
 export function CouponRegistration({ onRegistrationSuccess }: CouponRegistrationProps) {
@@ -77,16 +84,17 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
         return
       }
 
-      // Store user token for subsequent requests
-      localStorage.setItem("userToken", data.token)
+      localStorage.setItem("auth_token", data.token)
 
       setSuccess("Registration successful! Welcome to AI Interview Platform.")
 
       // Call success callback after a brief delay
       setTimeout(() => {
         onRegistrationSuccess({
+          id: data.user.id,
           email: formData.email,
           name: formData.name,
+          couponCode: formData.couponCode,
         })
       }, 1000)
     } catch (err) {

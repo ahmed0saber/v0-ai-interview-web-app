@@ -1,101 +1,86 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CouponRegistration } from "@/components/auth/coupon-registration"
-import { PositionSelection } from "@/components/interview/position-selection"
-import { VideoInterview } from "@/components/interview/video-interview"
-import { ResultsFeedback } from "@/components/interview/results-feedback"
-import { ShieldIcon } from "lucide-react"
-import Link from "next/link"
+import type React from "react"
 
-interface User {
-  email: string
-  name: string
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import { AuthProvider, useAuth } from "@/lib/auth-context"
+import { Navbar } from "@/components/layout/navbar"
+import { LoginPage } from "@/pages/login"
+import { RegisterPage } from "@/pages/register"
+import { PositionsPage } from "@/pages/positions"
+import { InterviewPage } from "@/pages/interview"
+import { ResultsPage } from "@/pages/results"
+import { ProfilePage } from "@/pages/profile"
+import AdminPage from "./admin/page"
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth()
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <>{children}</>
 }
 
-interface Position {
-  id: string
-  title: string
-  description: string
-  level: string
-  duration: string
-  questions: Array<{
-    id: string
-    question: string
-    followUp: string
-  }>
-}
+function AppRoutes() {
+  const { user } = useAuth()
 
-interface InterviewResults {
-  position: string
-  duration: number
-  questionsAnswered: number
-  completedAt: string
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/positions" replace /> : <Navigate to="/login" replace />} />
+        <Route path="/login" element={user ? <Navigate to="/positions" replace /> : <LoginPage />} />
+        <Route path="/register" element={user ? <Navigate to="/positions" replace /> : <RegisterPage />} />
+        <Route
+          path="/positions"
+          element={
+            <ProtectedRoute>
+              <PositionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/interview"
+          element={
+            <ProtectedRoute>
+              <InterviewPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/results"
+          element={
+            <ProtectedRoute>
+              <ResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/admin" element={<AdminPage />} />
+      </Routes>
+    </div>
+  )
 }
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null)
-  const [interviewResults, setInterviewResults] = useState<InterviewResults | null>(null)
-
-  const handleRegistrationSuccess = (userData: User) => {
-    setUser(userData)
-  }
-
-  const handlePositionSelect = (position: Position) => {
-    setSelectedPosition(position)
-  }
-
-  const handleInterviewComplete = (results: InterviewResults) => {
-    setInterviewResults(results)
-  }
-
-  const handleRetakeInterview = () => {
-    setInterviewResults(null)
-    // Keep the same position selected
-  }
-
-  const handleSelectNewPosition = () => {
-    setInterviewResults(null)
-    setSelectedPosition(null)
-    // Keep the user logged in
-  }
-
-  // Show registration if no user
-  if (!user) {
-    return (
-      <div className="relative">
-        <CouponRegistration onRegistrationSuccess={handleRegistrationSuccess} />
-        <div className="fixed bottom-4 right-4">
-          <Link href="/admin">
-            <Button variant="outline" size="sm" className="bg-background/80 backdrop-blur-sm">
-              <ShieldIcon className="mr-2 h-4 w-4" />
-              Admin Access
-            </Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  // Show position selection if user exists but no position selected
-  if (!selectedPosition) {
-    return <PositionSelection user={user} onPositionSelect={handlePositionSelect} />
-  }
-
-  if (interviewResults) {
-    return (
-      <ResultsFeedback
-        user={user}
-        position={selectedPosition}
-        results={interviewResults}
-        onRetakeInterview={handleRetakeInterview}
-        onSelectNewPosition={handleSelectNewPosition}
-      />
-    )
-  }
-
-  // Show video interview interface
-  return <VideoInterview user={user} position={selectedPosition} onInterviewComplete={handleInterviewComplete} />
+  return (
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
+  )
 }
