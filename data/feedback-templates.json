@@ -1,0 +1,74 @@
+{
+  "performanceMetrics": {
+    "excellent": {
+      "score": 90,
+      "label": "Excellent",
+      "color": "green",
+      "description": "Outstanding performance with comprehensive answers"
+    },
+    "good": {
+      "score": 75,
+      "label": "Good",
+      "color": "blue",
+      "description": "Solid performance with room for minor improvements"
+    },
+    "average": {
+      "score": 60,
+      "label": "Average",
+      "color": "yellow",
+      "description": "Adequate performance with several areas for improvement"
+    },
+    "needs_improvement": {
+      "score": 40,
+      "label": "Needs Improvement",
+      "color": "red",
+      "description": "Performance requires significant development"
+    }
+  },
+  "skillAreas": {
+    "react-dev": {
+      "technical_knowledge": "React concepts, hooks, state management",
+      "problem_solving": "Debugging and optimization approaches",
+      "communication": "Explaining technical concepts clearly",
+      "best_practices": "Code quality and architectural decisions"
+    },
+    "node-dev": {
+      "technical_knowledge": "Node.js fundamentals, async programming",
+      "problem_solving": "Server-side architecture and debugging",
+      "communication": "API design and documentation",
+      "best_practices": "Security and performance optimization"
+    },
+    "fullstack-dev": {
+      "technical_knowledge": "Full-stack architecture and integration",
+      "problem_solving": "End-to-end system design",
+      "communication": "Cross-team collaboration and requirements",
+      "best_practices": "Scalability and maintainability"
+    }
+  },
+  "improvementSuggestions": {
+    "technical_knowledge": [
+      "Review core concepts and fundamentals",
+      "Practice with hands-on coding exercises",
+      "Study official documentation and best practices",
+      "Build small projects to reinforce learning"
+    ],
+    "problem_solving": [
+      "Practice algorithmic thinking and debugging",
+      "Work through coding challenges regularly",
+      "Learn systematic problem-solving approaches",
+      "Study common design patterns and solutions"
+    ],
+    "communication": [
+      "Practice explaining technical concepts to non-technical audiences",
+      "Work on structuring answers clearly and concisely",
+      "Use examples and analogies to illustrate points",
+      "Practice active listening and asking clarifying questions"
+    ],
+    "best_practices": [
+      "Study industry standards and conventions",
+      "Learn about code review processes and quality metrics",
+      "Understand testing strategies and implementation",
+      "Focus on security, performance, and maintainability"
+    ]
+  }
+}

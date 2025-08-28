@@ -1,0 +1,106 @@
+{
+  "positions": [
+    {
+      "id": "react-dev",
+      "title": "React.js Developer",
+      "description": "Frontend development with React, JavaScript, and modern web technologies",
+      "level": "Mid-Senior",
+      "duration": "45 minutes",
+      "questions": [
+        {
+          "id": "react-1",
+          "question": "Can you explain the difference between state and props in React?",
+          "followUp": "How would you decide when to use state vs props in a component?"
+        },
+        {
+          "id": "react-2",
+          "question": "What are React hooks and why were they introduced?",
+          "followUp": "Can you give me an example of when you'd use useEffect?"
+        },
+        {
+          "id": "react-3",
+          "question": "How do you handle state management in large React applications?",
+          "followUp": "What are the pros and cons of using Context API vs external libraries like Redux?"
+        },
+        {
+          "id": "react-4",
+          "question": "Explain the concept of virtual DOM and how React uses it.",
+          "followUp": "What performance benefits does the virtual DOM provide?"
+        },
+        {
+          "id": "react-5",
+          "question": "How do you optimize React applications for better performance?",
+          "followUp": "Can you explain React.memo and when you would use it?"
+        }
+      ]
+    },
+    {
+      "id": "node-dev",
+      "title": "Node.js Developer",
+      "description": "Backend development with Node.js, Express, and server-side technologies",
+      "level": "Mid-Senior",
+      "duration": "45 minutes",
+      "questions": [
+        {
+          "id": "node-1",
+          "question": "What is the event loop in Node.js and how does it work?",
+          "followUp": "How does Node.js handle asynchronous operations?"
+        },
+        {
+          "id": "node-2",
+          "question": "Explain the difference between blocking and non-blocking operations.",
+          "followUp": "Can you give examples of when you'd use each approach?"
+        },
+        {
+          "id": "node-3",
+          "question": "How do you handle error handling in Node.js applications?",
+          "followUp": "What's the difference between operational and programmer errors?"
+        },
+        {
+          "id": "node-4",
+          "question": "What are streams in Node.js and when would you use them?",
+          "followUp": "Can you explain the different types of streams?"
+        },
+        {
+          "id": "node-5",
+          "question": "How do you secure a Node.js application?",
+          "followUp": "What are some common security vulnerabilities and how do you prevent them?"
+        }
+      ]
+    },
+    {
+      "id": "fullstack-dev",
+      "title": "Full Stack Developer",
+      "description": "End-to-end development with both frontend and backend technologies",
+      "level": "Senior",
+      "duration": "60 minutes",
+      "questions": [
+        {
+          "id": "fullstack-1",
+          "question": "How do you design the architecture for a full-stack application?",
+          "followUp": "What factors do you consider when choosing your tech stack?"
+        },
+        {
+          "id": "fullstack-2",
+          "question": "Explain how you would implement authentication in a full-stack app.",
+          "followUp": "What are the security considerations for storing user sessions?"
+        },
+        {
+          "id": "fullstack-3",
+          "question": "How do you handle data flow between frontend and backend?",
+          "followUp": "What are the benefits of using REST vs GraphQL APIs?"
+        },
+        {
+          "id": "fullstack-4",
+          "question": "Describe your approach to database design and optimization.",
+          "followUp": "How do you handle database migrations in production?"
+        },
+        {
+          "id": "fullstack-5",
+          "question": "How do you ensure code quality and maintainability across the stack?",
+          "followUp": "What testing strategies do you implement for full-stack applications?"
+        }
+      ]
+    }
+  ]
+}

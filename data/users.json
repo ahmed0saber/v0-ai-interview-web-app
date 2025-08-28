@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "user001",
+      "email": "john.doe@example.com",
+      "name": "John Doe",
+      "registeredAt": "2024-01-20T14:30:00Z",
+      "couponUsed": "BETA_ACCESS",
+      "isActive": true
+    }
+  ]
+}
