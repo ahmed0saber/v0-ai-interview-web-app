@@ -1,45 +1,59 @@
-const coupons = {
-    "coupons": [
-        {
-            "id": "COUP001",
-            "code": "INTERVIEW2025",
-            "isUsed": false,
-            "createdBy": "admin",
-            "createdAt": "2025-01-15T10:00:00Z",
-            "expiresAt": "2025-12-31T23:59:59Z"
-        },
-        {
-            "id": "COUP002",
-            "code": "BETA_ACCESS",
-            "isUsed": true,
-            "usedBy": "john.doe@example.com",
-            "usedAt": "2024-01-20T14:30:00Z",
-            "createdBy": "admin",
-            "createdAt": "2024-01-10T09:00:00Z",
-            "expiresAt": "2024-12-31T23:59:59Z"
-        },
-        {
-            "id": "COUP003",
-            "code": "EARLY_BIRD",
-            "isUsed": false,
-            "createdBy": "admin",
-            "createdAt": "2024-01-12T11:15:00Z",
-            "expiresAt": "2024-06-30T23:59:59Z"
-        },
-        {
-            "id": "COUP004",
-            "code": "PREMIUM_TEST",
-            "isUsed": false,
-            "createdBy": "admin",
-            "createdAt": "2024-01-18T16:45:00Z",
-            "expiresAt": "2024-12-31T23:59:59Z"
-        }
-    ]
-}
+import { getCollection } from "../../../lib/database.js"
+import { z } from "zod"
+
+const createCouponSchema = z.object({
+  code: z.string().min(3).max(20),
+  expiresAt: z.string().datetime(),
+  createdBy: z.string().optional().default("admin"),
+})
 
 export async function GET() {
-    return new Response(JSON.stringify(coupons), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 200,
-    });
+  try {
+    const couponsCollection = await getCollection("coupons")
+    const coupons = await couponsCollection.find({}).toArray()
+
+    return Response.json({ coupons })
+  } catch (error) {
+    return Response.json({ error: "Failed to fetch coupons" }, { status: 500 })
+  }
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json()
+    const validatedData = createCouponSchema.parse(body)
+
+    const couponsCollection = await getCollection("coupons")
+
+    // Check if coupon code already exists
+    const existingCoupon = await couponsCollection.findOne({ code: validatedData.code })
+    if (existingCoupon) {
+      return Response.json({ error: "Coupon code already exists" }, { status: 400 })
+    }
+
+    const newCoupon = {
+      ...validatedData,
+      isUsed: false,
+      usedBy: null,
+      usedAt: null,
+      createdAt: new Date(),
+      expiresAt: new Date(validatedData.expiresAt),
+    }
+
+    const result = await couponsCollection.insertOne(newCoupon)
+
+    return Response.json(
+      {
+        success: true,
+        coupon: { ...newCoupon, _id: result.insertedId },
+      },
+      { status: 201 },
+    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return Response.json({ error: "Invalid data", details: error.errors }, { status: 400 })
+    }
+
+    return Response.json({ error: "Failed to create coupon" }, { status: 500 })
+  }
 }

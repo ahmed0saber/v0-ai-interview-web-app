@@ -1,113 +1,73 @@
-const positions = {
-  "positions": [
-    {
-      "id": "react-dev",
-      "title": "React.js Developer",
-      "description": "Frontend development with React, JavaScript, and modern web technologies",
-      "level": "Mid-Senior",
-      "duration": "45 minutes",
-      "questions": [
-        {
-          "id": "react-1",
-          "question": "Can you explain the difference between state and props in React?",
-          "followUp": "How would you decide when to use state vs props in a component?"
-        },
-        {
-          "id": "react-2",
-          "question": "What are React hooks and why were they introduced?",
-          "followUp": "Can you give me an example of when you'd use useEffect?"
-        },
-        {
-          "id": "react-3",
-          "question": "How do you handle state management in large React applications?",
-          "followUp": "What are the pros and cons of using Context API vs external libraries like Redux?"
-        },
-        {
-          "id": "react-4",
-          "question": "Explain the concept of virtual DOM and how React uses it.",
-          "followUp": "What performance benefits does the virtual DOM provide?"
-        },
-        {
-          "id": "react-5",
-          "question": "How do you optimize React applications for better performance?",
-          "followUp": "Can you explain React.memo and when you would use it?"
-        }
-      ]
-    },
-    {
-      "id": "node-dev",
-      "title": "Node.js Developer",
-      "description": "Backend development with Node.js, Express, and server-side technologies",
-      "level": "Mid-Senior",
-      "duration": "45 minutes",
-      "questions": [
-        {
-          "id": "node-1",
-          "question": "What is the event loop in Node.js and how does it work?",
-          "followUp": "How does Node.js handle asynchronous operations?"
-        },
-        {
-          "id": "node-2",
-          "question": "Explain the difference between blocking and non-blocking operations.",
-          "followUp": "Can you give examples of when you'd use each approach?"
-        },
-        {
-          "id": "node-3",
-          "question": "How do you handle error handling in Node.js applications?",
-          "followUp": "What's the difference between operational and programmer errors?"
-        },
-        {
-          "id": "node-4",
-          "question": "What are streams in Node.js and when would you use them?",
-          "followUp": "Can you explain the different types of streams?"
-        },
-        {
-          "id": "node-5",
-          "question": "How do you secure a Node.js application?",
-          "followUp": "What are some common security vulnerabilities and how do you prevent them?"
-        }
-      ]
-    },
-    {
-      "id": "fullstack-dev",
-      "title": "Full Stack Developer",
-      "description": "End-to-end development with both frontend and backend technologies",
-      "level": "Senior",
-      "duration": "60 minutes",
-      "questions": [
-        {
-          "id": "fullstack-1",
-          "question": "How do you design the architecture for a full-stack application?",
-          "followUp": "What factors do you consider when choosing your tech stack?"
-        },
-        {
-          "id": "fullstack-2",
-          "question": "Explain how you would implement authentication in a full-stack app.",
-          "followUp": "What are the security considerations for storing user sessions?"
-        },
-        {
-          "id": "fullstack-3",
-          "question": "How do you handle data flow between frontend and backend?",
-          "followUp": "What are the benefits of using REST vs GraphQL APIs?"
-        },
-        {
-          "id": "fullstack-4",
-          "question": "Describe your approach to database design and optimization.",
-          "followUp": "How do you handle database migrations in production?"
-        },
-        {
-          "id": "fullstack-5",
-          "question": "How do you ensure code quality and maintainability across the stack?",
-          "followUp": "What testing strategies do you implement for full-stack applications?"
-        }
-      ]
-    }
-  ]
-}
+import { getCollection } from "../../../lib/database.js"
+import { verifyAdmin } from "../../../lib/auth-middleware.js"
+import { z } from "zod"
+
+const createPositionSchema = z.object({
+  id: z.string().min(3).max(50),
+  title: z.string().min(3).max(100),
+  description: z.string().min(10).max(500),
+  level: z.string().min(3).max(50),
+  duration: z.string().min(3).max(20),
+  questions: z
+    .array(
+      z.object({
+        id: z.string(),
+        question: z.string().min(10),
+        followUp: z.string().min(10),
+      }),
+    )
+    .min(1),
+})
 
 export async function GET() {
-    return new Response(JSON.stringify(positions), {
-        headers: { 'Content-Type': 'application/json' },
-        status: 200,
-    });
+  try {
+    const positionsCollection = await getCollection("positions")
+    const positions = await positionsCollection.find({}).toArray()
+
+    return Response.json({ positions })
+  } catch (error) {
+    return Response.json({ error: "Failed to fetch positions" }, { status: 500 })
+  }
+}
+
+export async function POST(request) {
+  const authResult = verifyAdmin(request)
+  if (authResult.error) {
+    return Response.json({ error: authResult.error }, { status: authResult.status })
+  }
+
+  try {
+    const body = await request.json()
+    const validatedData = createPositionSchema.parse(body)
+
+    const positionsCollection = await getCollection("positions")
+
+    // Check if position ID already exists
+    const existingPosition = await positionsCollection.findOne({ id: validatedData.id })
+    if (existingPosition) {
+      return Response.json({ error: "Position ID already exists" }, { status: 400 })
+    }
+
+    const newPosition = {
+      ...validatedData,
+      createdAt: new Date(),
+      createdBy: authResult.user.email,
+    }
+
+    const result = await positionsCollection.insertOne(newPosition)
+
+    return Response.json(
+      {
+        success: true,
+        position: { ...newPosition, _id: result.insertedId },
+      },
+      { status: 201 },
+    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return Response.json({ error: "Invalid data", details: error.errors }, { status: 400 })
+    }
+
+    return Response.json({ error: "Failed to create position" }, { status: 500 })
+  }
 }

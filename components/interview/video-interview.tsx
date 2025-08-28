@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { CaptionsDisplay } from "./captions-display"
+import { SpeechManager } from "../../lib/speech.js"
 import {
   Mic,
   MicOff,
@@ -19,6 +21,7 @@ import {
   SkipForwardIcon,
   CheckCircleIcon,
   AlertCircleIcon,
+  MessageSquare,
 } from "lucide-react"
 
 interface Position {
@@ -67,6 +70,21 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
     transition: "Excellent! Let's move on to the next question.",
     complete: "That concludes our interview. Thank you for your time!",
   }
+
+  const [speechManager] = useState(() => new SpeechManager())
+  const [captions, setCaptions] = useState<
+    Array<{
+      id: string
+      speaker: "ai" | "user"
+      text: string
+      timestamp: Date
+      isInterim?: boolean
+    }>
+  >([])
+  const [currentUserTranscript, setCurrentUserTranscript] = useState("")
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false)
+  const [captionsEnabled, setCaptionsEnabled] = useState(true)
+  const [interviewId, setInterviewId] = useState<string | null>(null)
 
   // Request media permissions
   useEffect(() => {
@@ -123,56 +141,219 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const startInterview = () => {
+  const startInterview = async () => {
+    try {
+      // Create interview session via API
+      const response = await fetch("/api/interviews", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          positionId: position.id,
+          userId: user.email,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setInterviewId(data.interview._id)
+      }
+    } catch (error) {
+      console.error("Failed to start interview session:", error)
+    }
+
     setPhase("intro")
-    setCurrentMessage(messages.intro)
-    simulateAISpeaking()
+    const introMessage = messages.intro
+    setCurrentMessage(introMessage)
+    await simulateAISpeaking(introMessage)
+
+    // Start listening for user response
+    startListening()
   }
 
-  const simulateAISpeaking = () => {
-    setIsSpeaking(true)
-    setTimeout(() => {
-      setIsSpeaking(false)
-    }, 3000)
+  const startListening = () => {
+    const success = speechManager.startListening(
+      (finalTranscript, interimTranscript) => {
+        setCurrentUserTranscript(interimTranscript)
+
+        if (finalTranscript.trim()) {
+          // Add user message to captions
+          const userCaption = {
+            id: `user-${Date.now()}`,
+            speaker: "user" as const,
+            text: finalTranscript.trim(),
+            timestamp: new Date(),
+          }
+          setCaptions((prev) => [...prev, userCaption])
+          setCurrentUserTranscript("")
+
+          // Process the answer if we're in question phase
+          if (phase === "question" && interviewId) {
+            processUserAnswer(finalTranscript.trim())
+          }
+        }
+      },
+      () => {
+        setIsUserSpeaking(false)
+        setCurrentUserTranscript("")
+      },
+    )
+
+    if (success) {
+      setIsUserSpeaking(true)
+      setIsRecording(true)
+    }
   }
 
-  const handlePhaseTransition = () => {
+  const processUserAnswer = async (answer: string) => {
+    if (!interviewId) return
+
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          answer,
+          questionIndex: currentQuestionIndex,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // AI responds with evaluation and follow-up
+        setTimeout(async () => {
+          await simulateAISpeaking(data.aiResponse)
+
+          // Continue to next phase after AI response
+          setTimeout(() => {
+            handlePhaseTransition()
+          }, 1000)
+        }, 1000)
+      }
+    } catch (error) {
+      console.error("Failed to process answer:", error)
+    }
+  }
+
+  const getNextQuestion = async () => {
+    if (!interviewId) return null
+
+    try {
+      const response = await fetch(`/api/interviews/${interviewId}/question`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        return data.question
+      }
+    } catch (error) {
+      console.error("Failed to get next question:", error)
+    }
+
+    return null
+  }
+
+  const handlePhaseTransition = async () => {
     switch (phase) {
       case "intro":
         setPhase("question")
-        setCurrentMessage(messages.question)
-        simulateAISpeaking()
+        const question = await getNextQuestion()
+        if (question) {
+          const questionMessage = `${messages.question}\n\n${question.question}`
+          setCurrentMessage(questionMessage)
+          await simulateAISpeaking(question.question)
+          startListening()
+        }
         break
       case "question":
         setPhase("discussion")
         setCurrentMessage(messages.discussion)
-        simulateAISpeaking()
         break
       case "discussion":
         if (currentQuestionIndex < position.questions.length - 1) {
           setPhase("transition")
           setCurrentMessage(messages.transition)
-          simulateAISpeaking()
-          setTimeout(() => {
+          await simulateAISpeaking(messages.transition)
+          setTimeout(async () => {
             setCurrentQuestionIndex((prev) => prev + 1)
             setPhase("question")
-            setCurrentMessage(messages.question)
-            simulateAISpeaking()
+            const nextQuestion = await getNextQuestion()
+            if (nextQuestion) {
+              const questionMessage = `${messages.question}\n\n${nextQuestion.question}`
+              setCurrentMessage(questionMessage)
+              await simulateAISpeaking(nextQuestion.question)
+              startListening()
+            }
           }, 2000)
         } else {
-          setPhase("complete")
-          setCurrentMessage(messages.complete)
-          simulateAISpeaking()
-          setTimeout(() => {
-            onInterviewComplete({
-              position: position.title,
-              duration: timeElapsed,
-              questionsAnswered: position.questions.length,
-              completedAt: new Date().toISOString(),
-            })
-          }, 3000)
+          await completeInterview()
         }
         break
+    }
+  }
+
+  const completeInterview = async () => {
+    setPhase("complete")
+    const completeMessage = messages.complete
+    setCurrentMessage(completeMessage)
+    await simulateAISpeaking(completeMessage)
+
+    if (interviewId) {
+      try {
+        const response = await fetch(`/api/interviews/${interviewId}/complete`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setTimeout(() => {
+            onInterviewComplete(data.results)
+          }, 3000)
+        }
+      } catch (error) {
+        console.error("Failed to complete interview:", error)
+      }
+    }
+  }
+
+  const simulateAISpeaking = async (message: string) => {
+    setIsSpeaking(true)
+
+    // Add AI message to captions
+    const aiCaption = {
+      id: `ai-${Date.now()}`,
+      speaker: "ai" as const,
+      text: message,
+      timestamp: new Date(),
+    }
+    setCaptions((prev) => [...prev, aiCaption])
+
+    try {
+      // Use speech synthesis to make AI speak
+      await speechManager.speak(message, {
+        rate: 0.9,
+        pitch: 1.0,
+        volume: 0.8,
+      })
+    } catch (error) {
+      console.error("Speech synthesis error:", error)
+    } finally {
+      setIsSpeaking(false)
     }
   }
 
@@ -183,6 +364,12 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
         track.enabled = isMuted
       })
       setIsMuted(!isMuted)
+
+      if (!isMuted) {
+        speechManager.stopListening()
+        setIsUserSpeaking(false)
+        setIsRecording(false)
+      }
     }
   }
 
@@ -342,19 +529,30 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
           </Card>
         </div>
 
-        {/* Interview Content */}
+        {/* Interview Content with Captions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Current Message/Question */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  {phase === "setup" && "Getting Ready"}
-                  {phase === "intro" && "Introduction"}
-                  {phase === "question" && `Question ${currentQuestionIndex + 1}`}
-                  {phase === "discussion" && "Follow-up Discussion"}
-                  {phase === "transition" && "Moving Forward"}
-                  {phase === "complete" && "Interview Complete"}
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <span>
+                    {phase === "setup" && "Getting Ready"}
+                    {phase === "intro" && "Introduction"}
+                    {phase === "question" && `Question ${currentQuestionIndex + 1}`}
+                    {phase === "discussion" && "Follow-up Discussion"}
+                    {phase === "transition" && "Moving Forward"}
+                    {phase === "complete" && "Interview Complete"}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setCaptionsEnabled(!captionsEnabled)}
+                    className="flex items-center gap-1"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Captions
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -375,6 +573,15 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
                     <p className="text-card-foreground">{currentQuestion.followUp}</p>
                   </div>
                 )}
+
+                <CaptionsDisplay
+                  captions={captions}
+                  isAISpeaking={isSpeaking}
+                  isUserSpeaking={isUserSpeaking}
+                  currentUserTranscript={currentUserTranscript}
+                  onToggleCaptions={() => setCaptionsEnabled(!captionsEnabled)}
+                  captionsEnabled={captionsEnabled}
+                />
               </CardContent>
             </Card>
           </div>
@@ -397,13 +604,46 @@ export function VideoInterview({ user, position, onInterviewComplete }: VideoInt
                 )}
 
                 {(phase === "intro" || phase === "question" || phase === "discussion") && (
-                  <Button
-                    onClick={handlePhaseTransition}
-                    className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-                  >
-                    <SkipForwardIcon className="mr-2 h-4 w-4" />
-                    Continue
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handlePhaseTransition}
+                      className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                    >
+                      <SkipForwardIcon className="mr-2 h-4 w-4" />
+                      Continue
+                    </Button>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant={isRecording ? "destructive" : "secondary"}
+                        onClick={() => {
+                          if (isRecording) {
+                            speechManager.stopListening()
+                            setIsRecording(false)
+                            setIsUserSpeaking(false)
+                          } else {
+                            startListening()
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          if (speechManager.isSpeaking()) {
+                            speechManager.stopSpeaking()
+                          }
+                        }}
+                        className="flex-1"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
                 )}
 
                 {phase === "complete" && (
