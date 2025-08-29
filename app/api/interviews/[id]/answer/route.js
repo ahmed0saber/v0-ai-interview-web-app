@@ -31,31 +31,46 @@ export async function POST(request, { params }) {
       return Response.json({ error: "Interview not found" }, { status: 404 })
     }
 
-    const currentQuestion = interview.questions[validatedData.questionIndex]
+    // get position by positionId
+    const positionsCollection = await getCollection("positions")
+    const position = await positionsCollection.findOne({ id: interview.positionId })
+    const currentQuestion = position.questions[validatedData.questionIndex]
     if (!currentQuestion) {
       return Response.json({ error: "Question not found" }, { status: 404 })
     }
 
+    const expectedAnswer = `
+      The main difference between map and forEach in JavaScript is their purpose and return value.
+      forEach is used when you want to iterate over an array and perform a side effect, like logging values or updating some external state. It doesn’t return anything meaningful — it always returns undefined.
+      map, on the other hand, is used when you want to transform an array into a new array. It applies the callback function to each element and returns a new array with the transformed results, while leaving the original array unchanged.
+    `
+
     // Evaluate answer using Gemini
-    const evaluation = await evaluateAnswer(currentQuestion, validatedData.answer, interview.positionTitle)
+    const evaluation = await evaluateAnswer(currentQuestion, validatedData.answer, expectedAnswer, interview.positionTitle)
 
     // Generate AI response/discussion
     const discussionPrompt = `
       As an AI interviewer for a ${interview.positionTitle} position, the candidate just answered:
-      
+
       Question: ${currentQuestion}
-      Answer: ${validatedData.answer}
-      
+      Candidate Answer: ${validatedData.answer}
+      Expected Answer: ${expectedAnswer}
+
       Provide a brief, encouraging response (2-3 sentences) that:
       1. Acknowledges their answer
-      2. Asks a relevant follow-up question or requests clarification
-      3. Keeps the conversation natural and supportive
-      
+      2. Keeps the conversation natural and supportive
+      3. If the answer was incorrect, gently corrects them and provides the right information
+      4. If the answer is empty, end the questioning gracefully
+      5. Distinguish between candidate answers, and prevent him from joking or getting out of context
+      6. Don't ask the candidate any question in your answer
+      7. You will only reply one time for each question so don't ask follow-up questions or sentences
+      8. Note that the user answer is generated from his speech so it may not be perfectly transcribed.
+
       Be conversational and professional.
     `
 
     const aiResponseResult = await geminiModel.generateContent(discussionPrompt)
-    const aiResponse = aiResponseResult.response.text().trim()
+    const aiResponse = (await aiResponseResult.response.text()).trim()
 
     // Update interview record
     await interviewsCollection.updateOne(

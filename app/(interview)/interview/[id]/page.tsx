@@ -19,7 +19,6 @@ import {
     PlayIcon,
     SkipForwardIcon,
     CheckCircleIcon,
-    MessageSquare,
     Loader,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
@@ -50,7 +49,7 @@ type InterviewPhase = "setup" | "intro" | "question" | "discussion" | "transitio
 
 export default function InterviewPage({ params }: VideoInterviewProps) {
     const [phase, setPhase] = useState<InterviewPhase>("setup")
-    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(-1)
     const [isRecording, setIsRecording] = useState(false)
     const [isMuted, setIsMuted] = useState(false)
     const [isVideoOn, setIsVideoOn] = useState(true)
@@ -64,27 +63,24 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
     const [position, setPosition] = useState<Position | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
-
-    useEffect(() => {
-        const fetchParams = async () => {
-            // Using React.use() to unwrap params as Promise
-            const resolvedParams = await params;
-            setPositionId(resolvedParams.id); // Set positionId after resolving the Promise
-        };
-
-        fetchParams(); // Fetch params asynchronously
-    }, [params]);
+    const [isInterviewLoading, setIsInterviewLoading] = useState(false)
+    const [isQuestionLoading, setIsQuestionLoading] = useState(false)
+    const [isDiscussion, setIsDiscussion] = useState(false)
 
     useEffect(() => {
         const fetchPosition = async () => {
-            const response = await fetch(`/api/positions/${positionId}`)
+            const resolvedParams = await params;
+            const { id } = resolvedParams;
+            setPositionId(id);
+            const response = await fetch(`/api/positions/${id}`)
             const data = await response.json()
+            console.log("Fetched position data:", data)
             setPosition(data)
             setIsLoading(false)
         }
 
         fetchPosition()
-    }, [positionId])
+    }, [])
 
     const videoRef = useRef<HTMLVideoElement>(null)
     const streamRef = useRef<MediaStream | null>(null)
@@ -120,9 +116,12 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
     const [isUserSpeaking, setIsUserSpeaking] = useState(false)
     const [captionsEnabled, setCaptionsEnabled] = useState(true)
     const [interviewId, setInterviewId] = useState<string | null>(null)
+    const [collectedAnswer, setCollectedAnswer] = useState("")
 
     // Request media permissions
     useEffect(() => {
+        if (isLoading) return
+
         const requestPermissions = async () => {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
@@ -151,7 +150,7 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
                 clearInterval(timerRef.current)
             }
         }
-    }, [])
+    }, [isLoading])
 
     // Timer for interview duration
     useEffect(() => {
@@ -178,6 +177,7 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
 
     const startInterview = async () => {
         try {
+            setIsInterviewLoading(true)
             const response = await fetch("/api/interviews", {
                 method: "POST",
                 headers: {
@@ -196,26 +196,37 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
             }
         } catch (error) {
             console.error("Failed to start interview session:", error)
+        } finally {
+            setIsInterviewLoading(false)
         }
 
-        setPhase("intro")
-        const introMessage = messages.intro
-        setCurrentMessage(introMessage)
-        await simulateAISpeaking(introMessage)
+        // HERE
+        // setPhase("intro")
+        // const introMessage = messages.intro
+        // setCurrentMessage(introMessage)
+        // await simulateAISpeaking(introMessage)
 
         // Start listening for user response after AI finishes speaking
-        setTimeout(() => {
-            startListening()
-        }, 1000)
+        // setTimeout(() => {
+        //     startListening()
+        //     setIsDiscussion(true)
+        // }, 1000)
+
+        setPhase("question")
+        handlePhaseTransition()
     }
 
+    // keep collecting transcripts until user submits
     const startListening = () => {
         const success = speechManager?.startListening(
             (finalTranscript: string, interimTranscript: string) => {
                 setCurrentUserTranscript(interimTranscript)
 
                 if (finalTranscript.trim()) {
-                    // Add user message to captions
+                    // Add to accumulated transcript instead of processing immediately
+                    setCollectedAnswer((prev) => `${prev} ${finalTranscript.trim()}`.trim())
+
+                    // Optional: keep captions updated for live feedback
                     const userCaption = {
                         id: `user-${Date.now()}`,
                         speaker: "user" as const,
@@ -223,12 +234,8 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
                         timestamp: new Date(),
                     }
                     setCaptions((prev) => [...prev, userCaption])
-                    setCurrentUserTranscript("")
 
-                    // Process the answer if we're in question phase
-                    if (phase === "question" && interviewId) {
-                        processUserAnswer(finalTranscript.trim())
-                    }
+                    setCurrentUserTranscript("")
                 }
             },
             () => {
@@ -241,6 +248,18 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
             setIsUserSpeaking(true)
             setIsRecording(true)
         }
+    }
+
+    // Called when user clicks "Submit Answer"
+    const handleSubmitAnswer = async () => {
+        if (!collectedAnswer.trim()) return
+
+        await processUserAnswer(collectedAnswer.trim())
+
+        // Clear after processing
+        setCollectedAnswer("")
+        setCurrentUserTranscript("")
+        setIsDiscussion(false)
     }
 
     const processUserAnswer = async (answer: string) => {
@@ -268,11 +287,6 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
 
                 setTimeout(async () => {
                     await simulateAISpeaking(data.aiResponse)
-
-                    // Continue to next phase after AI response with proper delay
-                    setTimeout(() => {
-                        handlePhaseTransition()
-                    }, 2000)
                 }, 1000)
             }
         } catch (error) {
@@ -284,68 +298,55 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
     }
 
     const getNextQuestion = async () => {
-        if (!interviewId) return null
+        if (currentQuestionIndex + 1 === position?.questions.length) return null
 
-        try {
-            const response = await fetch(`/api/interviews/${interviewId}/question`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-                },
-            })
+        setCurrentQuestionIndex((prevIndex) => prevIndex + 1)
 
-            if (response.ok) {
-                const data = await response.json()
-                return data.question
-            }
-        } catch (error) {
-            console.error("Failed to get next question:", error)
-        }
-
-        return null
+        return position?.questions[currentQuestionIndex + 1]
     }
 
-    const handlePhaseTransition = async () => {
-        switch (phase) {
-            case "intro":
+    const phaseHandlers: Record<string, () => Promise<void>> = {
+        // intro: async () => {
+        //     console.log("Transitioning phase from intro to question")
+        //     setPhase("question")
+        //     const question = await getNextQuestion()
+        //     if (question) {
+        //         const questionMessage = `${messages.question}\n\n${question.question}`
+        //         setCurrentMessage(questionMessage)
+        //         await simulateAISpeaking(`Here's a technical question for you: ${question.question}`)
+        //         setTimeout(() => startListening(), 1000)
+        //     }
+        // },
+
+        question: async () => {
+            console.log("Transitioning phase from question to question")
+            console.log({ currentQuestionIndex, position })
+            if (currentQuestionIndex < (position?.questions || []).length - 1) {
                 setPhase("question")
                 const question = await getNextQuestion()
                 if (question) {
                     const questionMessage = `${messages.question}\n\n${question.question}`
                     setCurrentMessage(questionMessage)
-                    await simulateAISpeaking(`Here's your next technical question: ${question.question}`)
-                    setTimeout(() => {
-                        startListening()
-                    }, 1500)
+                    await simulateAISpeaking(`Here's a technical question for you: ${question.question}`)
+                    setTimeout(() => startListening(), 1000)
                 }
-                break
-            case "question":
-                setPhase("discussion")
-                setCurrentMessage(messages.discussion)
-                break
-            case "discussion":
-                if (currentQuestionIndex < (position?.questions || []).length - 1) {
-                    setPhase("transition")
-                    setCurrentMessage(messages.transition)
-                    await simulateAISpeaking(messages.transition)
-                    setTimeout(async () => {
-                        setCurrentQuestionIndex((prev) => prev + 1)
-                        setPhase("question")
-                        const nextQuestion = await getNextQuestion()
-                        if (nextQuestion) {
-                            const questionMessage = `${messages.question}\n\n${nextQuestion.question}`
-                            setCurrentMessage(questionMessage)
-                            await simulateAISpeaking(`Let's move to the next question: ${nextQuestion.question}`)
-                            setTimeout(() => {
-                                startListening()
-                            }, 1500)
-                        }
-                    }, 2000)
-                } else {
-                    await completeInterview()
-                }
-                break
+            } else {
+                await completeInterview()
+            }
+        },
+    }
+
+    // HERE
+    const handlePhaseTransition = async () => {
+        speechManager?.stopListening()
+        setIsRecording(false)
+        setIsUserSpeaking(false)
+
+        console.log("Transitioning phase from", phase)
+        const handler = phaseHandlers[phase]
+        if (handler) {
+            await handler()
+            setIsDiscussion(true)
         }
     }
 
@@ -537,7 +538,7 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
                                         <p className="text-sm text-muted-foreground">AI Interview Assistant</p>
                                     </div>
                                     <div className="absolute bottom-2 right-2">
-                                        <Button size="sm" variant="secondary" className="h-8 w-8 p-0">
+                                        <Button size="sm" disabled variant="secondary" className="h-8 w-8 p-0">
                                             <Volume2 className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -561,15 +562,6 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
                                             {phase === "transition" && "Moving Forward"}
                                             {phase === "complete" && "Interview Complete"}
                                         </span>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => setCaptionsEnabled(!captionsEnabled)}
-                                            className="flex items-center gap-1"
-                                        >
-                                            <MessageSquare className="h-4 w-4" />
-                                            Captions
-                                        </Button>
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -615,51 +607,86 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
                                             onClick={startInterview}
                                             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                                         >
-                                            <PlayIcon className="mr-2 h-4 w-4" />
-                                            Start Interview
+                                            {isInterviewLoading ? (
+                                                <>
+                                                    Loading...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <PlayIcon className="mr-2 h-4 w-4" />
+                                                    Start Interview
+                                                </>
+                                            )}
                                         </Button>
                                     )}
 
                                     {(phase === "intro" || phase === "question" || phase === "discussion") && (
                                         <>
-                                            <Button
-                                                onClick={handlePhaseTransition}
-                                                className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-                                            >
-                                                <SkipForwardIcon className="mr-2 h-4 w-4" />
-                                                Continue
-                                            </Button>
+                                            {isDiscussion ? (
+                                                <Button
+                                                    onClick={handleSubmitAnswer}
+                                                    className="w-full !p-2 bg-accent hover:bg-accent/90 text-accent-foreground flex items-center justify-center gap-2"
+                                                >
+                                                    {
+                                                        isQuestionLoading ? (
+                                                            <>
+                                                                Loading...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <SkipForwardIcon className="h-4 w-4" />
+                                                                <span>Submit Answer</span>
+                                                            </>
+                                                        )
+                                                    }
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    onClick={handlePhaseTransition}
+                                                    className="w-full !p-2 bg-accent hover:bg-accent/90 text-accent-foreground flex items-center justify-center gap-2"
+                                                >
+                                                    {
+                                                        isQuestionLoading ? (
+                                                            <>
+                                                                Loading...
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <SkipForwardIcon className="h-4 w-4" />
+                                                                <span>Next Question</span>
+                                                            </>
+                                                        )
+                                                    }
+                                                </Button>
+                                            )}
 
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="sm"
-                                                    variant={isRecording ? "destructive" : "secondary"}
-                                                    onClick={() => {
-                                                        if (isRecording) {
-                                                            speechManager?.stopListening()
-                                                            setIsRecording(false)
-                                                            setIsUserSpeaking(false)
-                                                        } else {
-                                                            startListening()
-                                                        }
-                                                    }}
-                                                    className="flex-1"
-                                                >
-                                                    {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    onClick={() => {
-                                                        if (speechManager?.isSpeaking()) {
-                                                            speechManager?.stopSpeaking()
-                                                        }
-                                                    }}
-                                                    className="flex-1"
-                                                >
-                                                    <Volume2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
+                                            <Button
+                                                onClick={() => {
+                                                    if (isRecording || isSpeaking) {
+                                                        speechManager?.stopListening()
+                                                        setIsRecording(false)
+                                                        setIsUserSpeaking(false)
+                                                    } else {
+                                                        startListening()
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "w-full !p-2 bg-accent hover:bg-accent/90 text-accent-foreground flex items-center justify-center gap-2",
+                                                    (!isRecording || isSpeaking) && "bg-red-600 hover:bg-red-700 text-red-100",
+                                                )}
+                                            >
+                                                {(!isRecording || isSpeaking) ? (
+                                                    <>
+                                                        <MicOff className="h-4 w-4" />
+                                                        <span>Muted</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Mic className="h-4 w-4" />
+                                                        <span>Speak</span>
+                                                    </>
+                                                )}
+                                            </Button>
                                         </>
                                     )}
 

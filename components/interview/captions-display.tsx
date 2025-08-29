@@ -47,32 +47,16 @@ export function CaptionsDisplay({
   }
 
   return (
-    <Card className="h-64">
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="font-medium text-foreground flex items-center gap-2">
-            <Volume2 className="h-4 w-4" />
-            Live Captions
-          </h4>
-          <div className="flex items-center gap-2">
-            {onToggleCaptions && (
-              <Button size="sm" variant="ghost" onClick={onToggleCaptions} className="h-6 px-2">
-                <VolumeX className="h-3 w-3" />
-              </Button>
-            )}
-            <Badge
-              variant={autoScroll ? "default" : "secondary"}
-              className="text-xs cursor-pointer"
-              onClick={() => setAutoScroll(!autoScroll)}
-            >
-              Auto-scroll
-            </Badge>
-          </div>
-        </div>
+    <Card className="h-64 py-0">
+      <CardContent className="p-0 h-full">
+        <h4 className="font-medium text-foreground flex items-center gap-2 mb-0 bg-gray-200 p-4 rounded-t-xl">
+          <Volume2 className="h-4 w-4" />
+          Live Captions
+        </h4>
 
         <div
           id="captions-container"
-          className="h-48 overflow-y-auto space-y-2 bg-muted/30 rounded-lg p-3"
+          className="h-48 overflow-y-auto space-y-2 bg-muted/30 rounded-lg p-4"
           onScroll={(e) => {
             const { scrollTop, scrollHeight, clientHeight } = e.currentTarget
             setAutoScroll(scrollTop + clientHeight >= scrollHeight - 10)
@@ -84,21 +68,18 @@ export function CaptionsDisplay({
               className={`flex gap-2 ${caption.speaker === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`flex items-start gap-2 max-w-[80%] ${
-                  caption.speaker === "user" ? "flex-row-reverse" : "flex-row"
-                }`}
+                className={`flex items-start gap-2 max-w-[80%] ${caption.speaker === "user" ? "flex-row-reverse" : "flex-row"
+                  }`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    caption.speaker === "ai" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"
-                  }`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${caption.speaker === "ai" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground"
+                    }`}
                 >
                   {caption.speaker === "ai" ? <BotIcon className="h-3 w-3" /> : <UserIcon className="h-3 w-3" />}
                 </div>
                 <div
-                  className={`rounded-lg px-3 py-2 ${
-                    caption.speaker === "ai" ? "bg-accent/20 text-foreground" : "bg-primary/20 text-foreground"
-                  }`}
+                  className={`rounded-lg px-3 py-2 ${caption.speaker === "ai" ? "bg-accent/20 text-foreground" : "bg-primary/20 text-foreground"
+                    }`}
                 >
                   <p className="text-sm">{caption.text}</p>
                   <span className="text-xs text-muted-foreground">

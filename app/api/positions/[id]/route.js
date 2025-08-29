@@ -30,7 +30,7 @@ export async function GET(request, { params }) {
       return Response.json({ error: "Position not found" }, { status: 404 })
     }
 
-    return Response.json({ position })
+    return Response.json(position)
   } catch (error) {
     return Response.json({ error: "Failed to fetch position" }, { status: 500 })
   }
