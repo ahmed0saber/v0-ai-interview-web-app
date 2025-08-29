@@ -1,19 +1,19 @@
 import { connectToDatabase } from "@/lib/mongodb"
 import { verifyToken } from "@/lib/auth-middleware"
+import { ObjectId } from "mongodb"
 
 export async function GET(request) {
   try {
-    // Verify authentication
-    const authResult = await verifyToken(request)
-    if (!authResult.success) {
-      return Response.json({ error: authResult.error }, { status: 401 })
+    const authResult = verifyToken(request)
+    if (authResult.error) {
+      return Response.json({ error: authResult.error }, { status: authResult.status })
     }
 
     const { db } = await connectToDatabase()
-    const userId = authResult.user.id
+    const userId = authResult.user.userId
 
     // Get user data
-    const user = await db.collection("users").findOne({ _id: userId }, { projection: { password: 0 } })
+    const user = await db.collection("users").findOne({ _id: new ObjectId(userId) }, { projection: { password: 0 } })
 
     if (!user) {
       return Response.json({ error: "User not found" }, { status: 404 })
@@ -22,7 +22,7 @@ export async function GET(request) {
     // Get interview records for this user
     const interviewRecords = await db
       .collection("interview_records")
-      .find({ userId })
+      .find({ userId: authResult.user.email })
       .sort({ completedAt: -1 })
       .limit(10)
       .toArray()

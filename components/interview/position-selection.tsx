@@ -61,7 +61,7 @@ export function PositionSelection({ user, onPositionSelect }: PositionSelectionP
 
     setIsStarting(true)
     // Simulate preparation time
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 1000))
     onPositionSelect(selectedPosition)
   }
 
@@ -81,7 +81,7 @@ export function PositionSelection({ user, onPositionSelect }: PositionSelectionP
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8 pt-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome, {user.name}!</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome, {user?.name}!</h1>
           <p className="text-lg text-muted-foreground mb-4">
             Choose your interview position to begin your AI-powered practice session
           </p>

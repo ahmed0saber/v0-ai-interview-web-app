@@ -1,19 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CouponRegistration } from "@/components/auth/coupon-registration"
+import { useEffect, useState } from "react"
 import { PositionSelection } from "@/components/interview/position-selection"
-import { VideoInterview } from "@/components/interview/video-interview"
 import { ResultsFeedback } from "@/components/interview/results-feedback"
-import { ShieldIcon } from "lucide-react"
-// import { useAuth } from "@/lib/auth-context"
-import Link from "next/link"
-
-interface User {
-  email: string
-  name: string
-}
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 
 interface Position {
   id: string
@@ -36,20 +27,13 @@ interface InterviewResults {
 }
 
 export default function HomePage() {
-  const [user, setUser] = useState<User | null>(null)
+  const { user, isLoading } = useAuth()
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null)
   const [interviewResults, setInterviewResults] = useState<InterviewResults | null>(null)
-
-  const handleRegistrationSuccess = (userData: User) => {
-    setUser(userData)
-  }
+  const router = useRouter()
 
   const handlePositionSelect = (position: Position) => {
-    setSelectedPosition(position)
-  }
-
-  const handleInterviewComplete = (results: InterviewResults) => {
-    setInterviewResults(results)
+    router.push(`/interview/${position.id}`)
   }
 
   const handleRetakeInterview = () => {
@@ -64,18 +48,16 @@ export default function HomePage() {
   }
 
   // Show registration if no user
-  if (!user) {
+  useEffect(() => {
+    if (!user && !isLoading) {
+      router.push("/register")
+    }
+  }, [user, router, isLoading])
+
+  if (!user || isLoading) {
     return (
-      <div className="relative">
-        <CouponRegistration onRegistrationSuccess={handleRegistrationSuccess} />
-        <div className="fixed bottom-4 right-4">
-          <Link href="/admin">
-            <Button variant="outline" size="sm" className="bg-background/80 backdrop-blur-sm">
-              <ShieldIcon className="mr-2 h-4 w-4" />
-              Admin Access
-            </Button>
-          </Link>
-        </div>
+      <div className="flex items-center justify-center h-screen p-4">
+        <h1>Loading...</h1>
       </div>
     )
   }
@@ -96,11 +78,4 @@ export default function HomePage() {
       />
     )
   }
-
-  // Show video interview interface
-  return <VideoInterview
-    user={user}
-    position={selectedPosition}
-    onInterviewComplete={handleInterviewComplete}
-  />
 }

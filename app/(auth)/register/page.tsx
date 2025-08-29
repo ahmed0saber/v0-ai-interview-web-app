@@ -9,19 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react"
+import Link from "next/link"
+import { useAuth } from "@/lib/auth-context"
 
-interface User {
-  id: string
-  email: string
-  name: string
-  couponCode: string
-}
-
-interface CouponRegistrationProps {
-  onRegistrationSuccess: (userData: User) => void
-}
-
-export function CouponRegistration({ onRegistrationSuccess }: CouponRegistrationProps) {
+export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -31,6 +22,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const { user, login } = useAuth()
 
   const validateCoupon = async (code: string) => {
     try {
@@ -85,17 +77,12 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
       }
 
       localStorage.setItem("auth_token", data.token)
+      login(data.user)
 
       setSuccess("Registration successful! Welcome to AI Interview Platform.")
 
-      // Call success callback after a brief delay
       setTimeout(() => {
-        onRegistrationSuccess({
-          id: data.user.id,
-          email: formData.email,
-          name: formData.name,
-          couponCode: formData.couponCode,
-        })
+        window.location.href = "/"
       }, 1000)
     } catch (err) {
       setError("Registration failed. Please try again.")
@@ -198,7 +185,7 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              disabled={isLoading || !formData.name || !formData.email || !formData.couponCode}
+              disabled={isLoading || !formData.name || !formData.email || !formData.couponCode || !formData.password}
             >
               {isLoading ? (
                 <>
@@ -211,9 +198,12 @@ export function CouponRegistration({ onRegistrationSuccess }: CouponRegistration
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 text-center space-y-2">
             <p className="text-sm text-muted-foreground">
               Don't have a coupon code? <span className="text-accent font-medium">Contact your administrator</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Already have an account? <Link href="/login" className="text-accent font-medium">Log in here</Link>
             </p>
           </div>
         </CardContent>

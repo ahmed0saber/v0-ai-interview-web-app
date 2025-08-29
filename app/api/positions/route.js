@@ -1,5 +1,5 @@
-import { getCollection } from "../../../lib/database.js"
-import { verifyAdmin } from "../../../lib/auth-middleware.js"
+import { getCollection } from "@/lib/database.js"
+import { verifyAdmin } from "@/lib/auth-middleware.js"
 import { z } from "zod"
 
 const createPositionSchema = z.object({
