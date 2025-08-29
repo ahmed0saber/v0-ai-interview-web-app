@@ -1,6 +1,6 @@
-import { getCollection } from "../../../../../lib/database.js"
-import { verifyToken } from "../../../../../lib/auth-middleware.js"
-import { generateInterviewResults } from "../../../../../lib/gemini.js"
+import { getCollection } from "@/lib/database.js"
+import { verifyToken } from "@/lib/auth-middleware.js"
+import { generateInterviewResults } from "@/lib/groq-utils.js"
 import { ObjectId } from "mongodb"
 
 export async function POST(request, { params }) {
@@ -30,7 +30,6 @@ export async function POST(request, { params }) {
       })
     }
 
-    // Generate comprehensive results using Gemini
     const interviewData = {
       position: interview.positionTitle,
       questions: interview.questions || [],

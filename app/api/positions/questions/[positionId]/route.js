@@ -1,5 +1,5 @@
-import { getCollection } from "../../../../../lib/database.js"
-import { generateInterviewQuestion } from "../../../../../lib/gemini.js"
+import { getCollection } from "@/lib/database.js"
+import { generateInterviewQuestion } from "@/lib/groq-utils.js"
 
 export async function GET(request, { params }) {
   try {
@@ -18,7 +18,6 @@ export async function GET(request, { params }) {
     const availableQuestions = position.questions.filter((q) => !excludeQuestions.includes(q.id))
 
     if (availableQuestions.length === 0) {
-      // Generate new question using Gemini if all predefined questions are used
       try {
         const newQuestion = await generateInterviewQuestion(position.title, excludeQuestions)
 
