@@ -31,7 +31,6 @@ export default function InterviewRecordsPage() {
                 if (response.ok) {
                     const data = await response.json()
                     setInterviewRecords(data.interviewRecords)
-                    console.log("Profile data fetched successfully:", data)
                 }
             } catch (error) {
                 console.error("Failed to load profile data:", error)

@@ -37,9 +37,7 @@ export async function POST(request, { params }) {
       scores: interview.scores || [],
     }
 
-    console.log("[v0] Generating results for interview:", interviewData)
     const aiResults = await generateInterviewResults(interviewData)
-    console.log("[v0] Generated AI results:", aiResults)
 
     // Calculate additional metrics
     const totalQuestions = interview.questions?.length || 0
@@ -62,8 +60,6 @@ export async function POST(request, { params }) {
       startedAt: interview.startedAt,
     }
 
-    console.log("[v0] Final results to save:", finalResults)
-
     // Update interview record with comprehensive results
     await interviewsCollection.updateOne(
       { _id: new ObjectId(id) },
@@ -80,8 +76,6 @@ export async function POST(request, { params }) {
         },
       },
     )
-
-    console.log("[v0] Interview results saved successfully")
 
     return Response.json({
       success: true,

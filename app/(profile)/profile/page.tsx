@@ -45,7 +45,6 @@ export default function ProfilePage() {
                 if (response.ok) {
                     const data = await response.json()
                     setProfile(data)
-                    console.log("Profile data fetched successfully:", data)
                 }
             } catch (error) {
                 console.error("Failed to load profile data:", error)

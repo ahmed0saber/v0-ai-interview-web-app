@@ -74,7 +74,6 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
             setPositionId(id);
             const response = await fetch(`/api/positions/${id}`)
             const data = await response.json()
-            console.log("Fetched position data:", data)
             setPosition(data)
             setIsLoading(false)
         }
@@ -200,18 +199,6 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
             setIsInterviewLoading(false)
         }
 
-        // HERE
-        // setPhase("intro")
-        // const introMessage = messages.intro
-        // setCurrentMessage(introMessage)
-        // await simulateAISpeaking(introMessage)
-
-        // Start listening for user response after AI finishes speaking
-        // setTimeout(() => {
-        //     startListening()
-        //     setIsDiscussion(true)
-        // }, 1000)
-
         setPhase("question")
         handlePhaseTransition()
     }
@@ -306,28 +293,14 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
     }
 
     const phaseHandlers: Record<string, () => Promise<void>> = {
-        // intro: async () => {
-        //     console.log("Transitioning phase from intro to question")
-        //     setPhase("question")
-        //     const question = await getNextQuestion()
-        //     if (question) {
-        //         const questionMessage = `${messages.question}\n\n${question.question}`
-        //         setCurrentMessage(questionMessage)
-        //         await simulateAISpeaking(`Here's a technical question for you: ${question.question}`)
-        //         setTimeout(() => startListening(), 1000)
-        //     }
-        // },
-
         question: async () => {
-            console.log("Transitioning phase from question to question")
-            console.log({ currentQuestionIndex, position })
             if (currentQuestionIndex < (position?.questions || []).length - 1) {
                 setPhase("question")
                 const question = await getNextQuestion()
                 if (question) {
                     const questionMessage = `${messages.question}\n\n${question.question}`
                     setCurrentMessage(questionMessage)
-                    await simulateAISpeaking(`Here's a technical question for you: ${question.question}`)
+                    await simulateAISpeaking(question.question)
                     setTimeout(() => startListening(), 1000)
                 }
             } else {
@@ -342,7 +315,6 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
         setIsRecording(false)
         setIsUserSpeaking(false)
 
-        console.log("Transitioning phase from", phase)
         const handler = phaseHandlers[phase]
         if (handler) {
             await handler()
@@ -391,9 +363,9 @@ export default function InterviewPage({ params }: VideoInterviewProps) {
 
         try {
             await speechManager?.speak(message, {
-                rate: 0.85, // Slightly slower for better comprehension
+                rate: 1, // Slightly slower for better comprehension
                 pitch: 1.1, // Slightly higher pitch for AI voice
-                volume: 0.9, // Higher volume for clarity
+                volume: 1.5, // Higher volume for clarity
             })
         } catch (error) {
             console.error("Speech synthesis error:", error)

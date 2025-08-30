@@ -78,10 +78,7 @@ export function ResultsFeedback({
 
   useEffect(() => {
     const processFeedback = async () => {
-      console.log("[v0] Processing feedback with results:", results)
-
       if (results.overallScore && results.scores && results.strengths) {
-        console.log("[v0] Using API-generated feedback")
         setFeedbackData({
           overallScore: results.overallScore,
           performanceLevel: getPerformanceLevel(results.overallScore),
@@ -94,7 +91,6 @@ export function ResultsFeedback({
         })
         setIsLoading(false)
       } else {
-        console.log("[v0] Falling back to mock data generation")
         await generateMockFeedback()
       }
     }
